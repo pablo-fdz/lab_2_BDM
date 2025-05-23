@@ -1,0 +1,9 @@
+{
+    "database": {
+      "name": "bdm_lab2"
+    },
+    "generation": {
+      "person_company_ratio": 50,
+      "languages": ["it_IT", "en_US", "es_ES", "ja_JP"]
+    }
+  }
