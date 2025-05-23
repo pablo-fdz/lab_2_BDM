@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from faker import Faker
 from dotenv import load_dotenv
 import os
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -46,26 +47,29 @@ class Model1:
         
         # Generate companies first and keep track of their IDs
         company_ids = []
+        company_domains = {}  # Dictionary to store company domains for later use
         for x in range(n_companies):  # Generate n_companies documents
             
             # Generate random data with consistency
             c_name = fake.company()
-            c_email = "@" + c_name.replace(" ", "").lower() + ".com"
+            c_domain = "@" + re.sub(r'[^\w]', '', c_name).lower() + ".com"
+            c_email = 'customers' + c_domain
             c_url = c_name.replace(" ", "").lower() + ".com"
             
             # Create custom company IDs (not MongoDB default ObjectId)
-            company_id = fake.company_business_id()
+            company_id = fake.uuid4()
             
             c = {
                 "_id": company_id,
-                "domain": fake.company_category(),
+                "domain": c_domain,
                 "email": c_email,
                 "name": c_name, 
                 "url": c_url, 
-                "vatNumber": fake.company_vat(),
+                "vatNumber": fake.uuid4(),
                 "employeeIds": []  # Initialize empty array to store employee references (updated later)
             }
             
+            company_domains[company_id] = c_domain
             company_ids.append(company_id)  # Store company ID for later use
             
             collection_objects['Company'].insert_one(c)  # Insert the generated data into the collection
@@ -76,23 +80,28 @@ class Model1:
         for x in range(n_people):  # Generate n_people documents
             
             # Generate random data with consistency
+            person_id = fake.uuid4()
             date_of_birth = fake.date_of_birth(minimum_age=18, maximum_age=80)
+            date_of_birth_dt = datetime.datetime.combine(date_of_birth, datetime.time.min)  # Convert date_of_birth to datetime.datetime object to ensure compatibility with MongoDB
             age = datetime.datetime.now().year - date_of_birth.year
             first_name = fake.first_name()
             last_name = fake.last_name()
             full_name = first_name + " " + last_name
+            email = first_name.lower() + '.' + last_name.lower() + '@' + 'example.com'
             
             # Assign person to a random company
             assigned_company_id = fake.random_element(elements=company_ids)
-            
-            person_id = fake.identity_card_number()
+            company_domain = company_domains[assigned_company_id]
+
+			# Create custom company email from the company name
+            company_email = first_name.lower() + '.' + last_name.lower() + company_domain
             
             p = {
                 "_id": person_id,
                 "age": age,
-                "companyEmail": fake.company_email(),
-                "dateOfBirth": date_of_birth,
-                "email": fake.email(),
+                "companyEmail": company_email,
+                "dateOfBirth": date_of_birth_dt,
+                "email": email,
                 "firstName": first_name,
                 "fullName": full_name,
                 "sex": fake.random_element(elements=('M', 'F', 'O')),
