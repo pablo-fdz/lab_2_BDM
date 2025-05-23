@@ -8,36 +8,35 @@ from dotenv import load_dotenv
 import os
 import re
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Load configuration
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 class Model1:
-    def data_generator(self, n):
 
-        # 1. Database Setup
-
+    def __init__(self, client, db):
         # Connect to MongoDB from environment variable - Note: Change connection string as needed
         client = MongoClient(os.getenv('MONGO_PORT'))
         # Connect to the database (creates it lazily if it doesn't exist) - will 
         # be actually created when the first document is insereted into a collection
         db_name = config['database']['name']
         db = client[db_name]  # Use the database name from the config file
+        self.client = client
+        self.db = db
+
+    def data_generator(self, n):
         
-        # 2. Collection Setup
+        # 1. Collection Setup
 
         # Create 2 different collections
         collections = ['Person', 'Company']
         collection_objects = {}  # Dictionary to store collection objects
 
         for collection in collections:
-            db.drop_collection(collection)  # Delete collection data if exists
-            collection_objects[collection] = db.create_collection(collection)  # Create and obtain collection
+            self.db.drop_collection(collection)  # Delete collection data if exists
+            collection_objects[collection] = self.db.create_collection(collection)  # Create and obtain collection
         
-        # 3. Data Generation
+        # 2. Data Generation
 
         fake = Faker(config['generation']['languages'])  # Create a Faker object with multiple languages
         
@@ -119,16 +118,56 @@ class Model1:
                 {"$set": {"employeeIds": employee_ids}}  # Update the employeeIds field with the list of employee IDs
             )
             print(f"Updated company {company_id} with {len(employee_ids)} employee references")
-        
-        # 4. Performance Testing
+    
+    def query_1(self):
 
-        # Get time at the start of the query
-        start_time = time.time()  # Measure the time before running the query
-        result = collection_objects['Person'].find_one()  # Retrieve one document from the collection
-        query_time = time.time() - start_time  # Measure the time taken to execute the query
-        # Display the query execution time and the result
-        print("--- %s seconds ---" % (query_time) + str(result))
+        """For each person, retrieve full name and their company's name"""
+    
+        # Get the Person collection
+        person_collection = self.db['Person']
         
-        # 5. Close the connection
+        # Define the aggregation pipeline
+        pipeline = [
+            {
+                "$lookup": {  # Look for the company names in the "Company" collection
+                    "from": "Company",
+                    "localField": "companyId",
+                    "foreignField": "_id",
+                    "as": "company"
+                }
+            },
+            {
+                "$unwind": "$company"  # Remove the array 
+            },
+            {
+                "$project": {  # Choose only certain attributes
+                    "fullName": "$fullName",
+                    "companyName": "$company.name"  # Get only the company name
+                }
+            }
+        ]
+        
+        # Execute the aggregation query
+        start_time = time.time()
+        results = list(person_collection.aggregate(pipeline))
+        query_time = time.time() - start_time
+        
+        # Display length of results
+        print(f"Found {len(results)} people with their companies. First 5 results:")
+        
+        for result in results[:5]:  # Display only the first 5 results
+            print(f"- {result['fullName']} works at {result['companyName']}")
+        
+        return query_time
+    
+    def query_2(self):
 
-        client.close()
+        """For each company, retrieve its name and the number of employees"""
+
+    def query_3(self):
+
+        """For each person born before 1988, update their age to “30”"""
+
+    def query_4(self):
+
+        """For each company, update its name to include the word “Company”"""
