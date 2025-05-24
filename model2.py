@@ -65,7 +65,7 @@ class Model2:
                 "email": c_email,
                 "name": c_name, 
                 "url": c_url, 
-                "vatNumber": fake.uuid4(),
+                "vatNumber": fake.uuid4()
             }
             
             company_list.append(c)  # Store the company data
@@ -103,7 +103,7 @@ class Model2:
                 "email": email,
                 "firstName": first_name,
                 "fullName": full_name,
-                "sex": fake.random_element(elements=('M', 'F', 'O')),
+                "sex": fake.random_element(elements=('M', 'F', 'O'))
             }
 
             # Append the company dictionary corresponding to the assigned company ID

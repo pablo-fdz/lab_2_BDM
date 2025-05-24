@@ -33,8 +33,8 @@ class Model3:
                 self.db.drop_collection(collection_name)  # Drop existing collections except system collections
                 print(f"Dropped collection: {collection_name}")
 
-        # Create only the Person collection
-        collection_objects = {'Person': self.db.create_collection('Person')}
+        # Create only the Company collection
+        collection_objects = {'Company': self.db.create_collection('Company')}
         
         # 2. Data Generation
 
@@ -45,7 +45,6 @@ class Model3:
         n_people = n - n_companies  # Number of people to generate
         
         # Generate companies first and keep track of their IDs
-        company_list = []  # List to store company data for later use
         company_ids = []
         company_domains = {}  # Dictionary to store company domains for later use
         for x in range(n_companies):  # Generate n_companies documents
@@ -66,12 +65,14 @@ class Model3:
                 "name": c_name, 
                 "url": c_url, 
                 "vatNumber": fake.uuid4(),
+                "employees": []  # Initialize empty array to store employees as embedded documents
             }
             
-            company_list.append(c)  # Store the company data
             company_domains[company_id] = c_domain
             company_ids.append(company_id)  # Store company ID for later use
-                    
+            
+            collection_objects['Company'].insert_one(c)  # Insert the generated data into the collection
+        
         print(f"Generated {n_companies} companies with {len(company_ids)} unique IDs.")
 
         # Now generate people and assign each to a company
@@ -104,18 +105,24 @@ class Model3:
                 "firstName": first_name,
                 "fullName": full_name,
                 "sex": fake.random_element(elements=('M', 'F', 'O')),
+                "companyId": assigned_company_id  # Reference to company
             }
-
-            # Append the company dictionary corresponding to the assigned company ID
-            # to the person dictionary
-            company = next((c for c in company_list if c['_id'] == assigned_company_id), None)
-            p["company"] = company
             
             collection_objects['Person'].insert_one(p)  # Insert the generated data into the collection
             companies_to_employees[assigned_company_id].append(person_id)  # Track this person for the company's employee list
         
         print(f"Generated {n_people} people.")
-        print(f"Total: {n_people} documents.")
+        print(f"Total: {n} documents.")
+
+        # Update each company with its employee references
+        for company_id, employee_ids in companies_to_employees.items():
+            collection_objects['Company'].update_one(
+                {"_id": company_id},  # Filter document (company ID)
+                {"$set": {"employeeIds": employee_ids}}  # Update the employeeIds field with the list of employee IDs
+            )
+
+        print("Updated all companies with employee references.")
+
         print("Data generation completed successfully.")
 
     def query_1(self):
