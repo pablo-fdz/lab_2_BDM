@@ -1,0 +1,19 @@
+db.Person.aggregate([
+            {
+                "$lookup": {  // Look for the company names in the "Company" collection
+                    "from": "Company",
+                    "localField": "companyId",
+                    "foreignField": "_id",
+                    "as": "company"
+                }
+            },
+            {
+                "$unwind": "$company"  // Remove the array 
+            },
+            {
+                "$project": {  // Choose only certain attributes
+                    "fullName": "$fullName",
+                    "companyName": "$company.name"  // Get only the company name
+                }
+            }
+        ])

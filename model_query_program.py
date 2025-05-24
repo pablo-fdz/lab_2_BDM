@@ -46,10 +46,12 @@ while op != 0:
         time_q2 = m.query_2()
         time_q3 = m.query_3()
         time_q4 = m.query_4()
+        print("\n", "==" * 10, "MODEL 1 RESULTS", "==" * 10, "\n")
         print("Query 1 time: ", time_q1)
         print("Query 2 time: ", time_q2)
         print("Query 3 time: ", time_q3)
         print("Query 4 time: ", time_q4)
+        print("\n", "==" * 8, "END OF MODEL 1 RESULTS", "==" * 8, "\n")
         client.close()  # Close the connection to MongoDB
     elif op == 2:
         n = int(input("Insert the number of documents to create:"))

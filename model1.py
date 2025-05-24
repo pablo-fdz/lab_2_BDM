@@ -72,8 +72,10 @@ class Model1:
             company_ids.append(company_id)  # Store company ID for later use
             
             collection_objects['Company'].insert_one(c)  # Insert the generated data into the collection
-            print(str(x+1) + ". Company document inserted")
+            # print(str(x+1) + ". Company document inserted")
         
+        print(f"Generated {n_companies} companies with {len(company_ids)} unique IDs.")
+
         # Now generate people and assign each to a company
         companies_to_employees = {company_id: [] for company_id in company_ids}
         for x in range(n_people):  # Generate n_people documents
@@ -109,16 +111,23 @@ class Model1:
             
             collection_objects['Person'].insert_one(p)  # Insert the generated data into the collection
             companies_to_employees[assigned_company_id].append(person_id)  # Track this person for the company's employee list
-            print(str(x+1) + ". Person document inserted")
+            # print(str(x+1) + ". Person document inserted")
         
+        print(f"Generated {n_people} people.")
+        print(f"Total: {n} documents.")
+
         # Update each company with its employee references
         for company_id, employee_ids in companies_to_employees.items():
             collection_objects['Company'].update_one(
                 {"_id": company_id},  # Filter document (company ID)
                 {"$set": {"employeeIds": employee_ids}}  # Update the employeeIds field with the list of employee IDs
             )
-            print(f"Updated company {company_id} with {len(employee_ids)} employee references")
-    
+            # print(f"Updated company {company_id} with {len(employee_ids)} employee references")
+
+        print("Updated all companies with employee references.")
+
+        print("Data generation completed successfully.")
+
     def query_1(self):
 
         """For each person, retrieve full name and their company's name"""
@@ -151,8 +160,10 @@ class Model1:
         start_time = time.time()
         results = list(person_collection.aggregate(pipeline))
         query_time = time.time() - start_time
-        
+
         # Display length of results
+        print("\n", "--" * 30)
+        print(f"\nQuery 1 executed in {query_time} seconds.")
         print(f"Found {len(results)} people with their companies. First 5 results:")
         
         for result in results[:5]:  # Display only the first 5 results
@@ -163,11 +174,80 @@ class Model1:
     def query_2(self):
 
         """For each company, retrieve its name and the number of employees"""
+        
+        # Get the Company collection
+        company_collection = self.db['Company']
+        
+        # Define the aggregation pipeline
+        pipeline = [
+            {
+                "$project": {  # Choose only certain attributes
+                    "companyName": "$name",
+                    "numEmployees": {"$size": "$employeeIds"}
+                }
+            }
+        ]
+        
+        # Execute the aggregation query
+        start_time = time.time()
+        results = list(company_collection.aggregate(pipeline))
+        query_time = time.time() - start_time
+
+        # Display length of results
+        print("\n", "--" * 30)
+        print(f"\nQuery 2 executed in {query_time} seconds.")
+        print(f"Found {len(results)} companies. First 5 results:")
+        
+        for result in results[:5]:  # Display only the first 5 results
+            print(f"- {result['companyName']} has {result['numEmployees']} employees")
+        
+        return query_time
 
     def query_3(self):
 
         """For each person born before 1988, update their age to “30”"""
 
+        # Get the Person collection
+        person_collection = self.db['Person']
+        
+        # Execute the update query
+        start_time = time.time()
+        results = person_collection.update_many(
+            filter = {
+                "$expr": {  # Allows us to use aggregation expressions (like $year) in the query
+                    "$lt": [{"$year": "$dateOfBirth"}, 1988]  # Compute year of birth and compare it
+                }
+            },
+            update = {"$set": {"age": 30}}
+        )
+        query_time = time.time() - start_time
+        
+        # Display the number of documents updated
+        print("\n", "--" * 30)
+        print(f"\nQuery 3 executed in {query_time} seconds.")
+        print(f"Matched {results.matched_count} people and updated {results.modified_count} people born before 1988 to have age 30.")
+
+        return query_time
+
     def query_4(self):
 
         """For each company, update its name to include the word “Company”"""
+
+
+        # Get the Company collection
+        company_collection = self.db['Company']
+
+        # Execute the update query
+        start_time = time.time()
+        results = company_collection.update_many(
+            filter = {},  # No filter, update all companies
+            update = {"$set": {"name": "Company"}}
+        )
+        query_time = time.time() - start_time
+        
+        # Display the number of documents updated
+        print("\n", "--" * 30)
+        print(f"\nQuery 4 executed in {query_time} seconds.")
+        print(f"Matched {results.matched_count} companies and updated {results.modified_count} companies to have the name 'Company'.")
+
+        return query_time
