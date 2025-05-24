@@ -52,7 +52,7 @@ while op != 0:
         print("Query 3 time: ", time_q3)
         print("Query 4 time: ", time_q4)
         print("\n", "==" * 8, "END OF MODEL 1 RESULTS", "==" * 8, "\n")
-        client.close()  # Close the connection to MongoDB
+        # client.close()  # Close the connection to MongoDB
     elif op == 2:
         n = int(input("Insert the number of documents to create:"))
         m = Model2(client=client, db=db)
@@ -68,7 +68,7 @@ while op != 0:
         print("Query 3 time: ", time_q3)
         print("Query 4 time: ", time_q4)
         print("\n", "==" * 8, "END OF MODEL 2 RESULTS", "==" * 8, "\n")
-        client.close()  # Close the connection to MongoDB
+        # client.close()  # Close the connection to MongoDB
     elif op == 3:
         n = int(input("Insert the number of documents to create:"))
         m = Model3(client=client, db=db)
@@ -83,10 +83,13 @@ while op != 0:
         print("Query 3 time: ", time_q3)
         print("Query 4 time: ", time_q4)
         print("\n", "==" * 8, "END OF MODEL 3 RESULTS", "==" * 8, "\n")
-        client.close()  # Close the connection to MongoDB
     else:
-        print ("Exitting ...")
+        print ("Exitting and closing the database...")
+        client.close()  # Close the connection to MongoDB
         sys.exit()
 
     show_options(new)
     op = int(input())
+
+print ("Exitting and closing the database...")
+client.close()  # Close the connection to MongoDB

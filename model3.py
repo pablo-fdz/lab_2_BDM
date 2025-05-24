@@ -4,7 +4,6 @@ import time
 import json
 from pymongo import MongoClient
 from faker import Faker
-import os
 import re
 
 # Load configuration
@@ -14,12 +13,6 @@ with open('config.json', 'r') as config_file:
 class Model3:
 
     def __init__(self, client, db):
-        # Connect to MongoDB from environment variable - Note: Change connection string as needed
-        client = MongoClient(os.getenv('MONGO_PORT'))
-        # Connect to the database (creates it lazily if it doesn't exist) - will 
-        # be actually created when the first document is insereted into a collection
-        db_name = config['database']['name']
-        db = client[db_name]  # Use the database name from the config file
         self.client = client
         self.db = db
 
@@ -105,46 +98,43 @@ class Model3:
                 "firstName": first_name,
                 "fullName": full_name,
                 "sex": fake.random_element(elements=('M', 'F', 'O')),
-                "companyId": assigned_company_id  # Reference to company
             }
             
-            collection_objects['Person'].insert_one(p)  # Insert the generated data into the collection
             companies_to_employees[assigned_company_id].append(person_id)  # Track this person for the company's employee list
-        
-        print(f"Generated {n_people} people.")
-        print(f"Total: {n} documents.")
-
-        # Update each company with its employee references
-        for company_id, employee_ids in companies_to_employees.items():
+            # Append the person dictionary to the employees array of the assigned company
             collection_objects['Company'].update_one(
-                {"_id": company_id},  # Filter document (company ID)
-                {"$set": {"employeeIds": employee_ids}}  # Update the employeeIds field with the list of employee IDs
+                {"_id": assigned_company_id},  # Filter document (company ID)
+                {"$push": {"employees": p}}  # Push the person dictionary into the employees array
             )
 
+        print(f"Generated {n_people} people.")
         print("Updated all companies with employee references.")
-
+        print(f"Total: {n_companies} documents.")
         print("Data generation completed successfully.")
 
     def query_1(self):
 
         """For each person, retrieve full name and their company's name"""
     
-        # Get the Person collection
-        person_collection = self.db['Person']
+        # Get the Company collection (since employees are embedded in Company documents)
+        company_collection = self.db['Company']
         
         # Define the aggregation pipeline
         pipeline = [
             {
+                "$unwind": "$employees"  # Deconstruct employees document to create one doc per field (as many Company documents as its employee number)
+            },
+            {
                 "$project": {  # Choose only certain attributes
-                    "fullName": "$fullName",
-                    "companyName": "$company.name"  # Get only the company name
+                    "fullName": "$employees.fullName",
+                    "companyName": "$name" 
                 }
             }
         ]
         
         # Execute the aggregation query
         start_time = time.time()
-        results = list(person_collection.aggregate(pipeline))
+        results = list(company_collection.aggregate(pipeline))
         query_time = time.time() - start_time
 
         # Display length of results
@@ -161,23 +151,22 @@ class Model3:
 
         """For each company, retrieve its name and the number of employees"""
         
-        # Get the Person collection (since companies are embedded in Person)
-        person_collection = self.db['Person']
+        # Get the Company collection
+        company_collection = self.db['Company']
         
         # Define the aggregation pipeline
         pipeline = [
             {
-                "$group": {
-                    "_id": "$company._id",  # Group all Person documents by their company's ID, creating one result per unique company
-                    "companyName": { "$first": "$company.name" },  # For each company group, take the company name from the first document in that group
-                    "numEmployees": { "$sum": 1 }  # Counts one for each document in each group, giving us the total number of employees per company
+                "$project": {  # Choose only certain attributes
+                    "companyName": "$name",
+                    "numEmployees": {"$size": "$employees"}
                 }
             }
         ]
         
         # Execute the aggregation query
         start_time = time.time()
-        results = list(person_collection.aggregate(pipeline))
+        results = list(company_collection.aggregate(pipeline))
         query_time = time.time() - start_time
 
         # Display length of results
@@ -195,24 +184,23 @@ class Model3:
         """For each person born before 1988, update their age to “30”"""
 
         # Get the Person collection
-        person_collection = self.db['Person']
+        company_collection = self.db['Company']
         
         # Execute the update query
         start_time = time.time()
-        results = person_collection.update_many(
-            filter = {
-                "$expr": {  # Allows us to use aggregation expressions (like $year) in the query
-                    "$lt": [{"$year": "$dateOfBirth"}, 1988]  # Compute year of birth and compare it
-                }
-            },
-            update = {"$set": {"age": 30}}
+        results = company_collection.update_many(
+            filter = { "employees": { "$exists": True } },  # (Filter) Check that the "employees" array exists
+            update = { "$set": { "employees.$[elem].age": 30 } },  # (Update) age to 30, considering the array filter
+            array_filters = [
+                { "elem.dateOfBirth": { "$lt": datetime.datetime(1988, 1, 1)} }  # For each element of the array, update if DOB less than 1998 (workaround, as $expression does not work with arrayFilters)
+            ]
         )
         query_time = time.time() - start_time
         
         # Display the number of documents updated
         print("\n", "--" * 30)
         print(f"\nQuery 3 executed in {query_time} seconds.")
-        print(f"Matched {results.matched_count} people and updated {results.modified_count} people born before 1988 to have age 30.")
+        print(f"Matched {results.matched_count} companies and updated the age to 30 of the employees born before 1988.")
 
         return query_time
 
@@ -220,14 +208,14 @@ class Model3:
 
         """For each company, update its name to include the word “Company”"""
 
-        # Get the Person collection (since companies are embedded in Person)
-        person_collection = self.db['Person']
+        # Get the Company collection
+        company_collection = self.db['Company']
 
         # Execute the update query
         start_time = time.time()
-        results = person_collection.update_many(
+        results = company_collection.update_many(
             filter = {},  # No filter, update all companies
-            update = {"$set": {"company.name": "Company"}}
+            update = {"$set": {"name": "Company"}}
         )
         query_time = time.time() - start_time
         

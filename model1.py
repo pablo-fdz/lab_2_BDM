@@ -27,8 +27,13 @@ class Model1:
         collections = ['Person', 'Company']
         collection_objects = {}  # Dictionary to store collection objects
 
+        # Drop existing collections except system collections
+        for collection_name in self.db.list_collection_names():
+            if not collection_name.startswith('system.'):
+                self.db.drop_collection(collection_name)  # Drop existing collections except system collections
+                print(f"Dropped collection: {collection_name}")
+
         for collection in collections:
-            self.db.drop_collection(collection)  # Delete collection data if exists
             collection_objects[collection] = self.db.create_collection(collection)  # Create and obtain collection
         
         # 2. Data Generation
@@ -224,7 +229,6 @@ class Model1:
     def query_4(self):
 
         """For each company, update its name to include the word “Company”"""
-
 
         # Get the Company collection
         company_collection = self.db['Company']

@@ -1,0 +1,9 @@
+db.Company.updateMany(
+  { "employees": { "$exists": true } },  // (Filter) Check that the "employees" array exists
+  { "$set": { "employees.$[elem].age": 30 } },  // (Update) age to 30, considering the array filter
+  {
+    arrayFilters: [
+      { "elem.dateOfBirth": { "$lt": ISODate("1988-01-01T00:00:00Z") } }  // For each element of the array, update if DOB less than 1998 (workaround, as $expression does not work with arrayFilters)
+    ]
+  }
+)

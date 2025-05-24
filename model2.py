@@ -4,7 +4,6 @@ import time
 import json
 from pymongo import MongoClient
 from faker import Faker
-import os
 import re
 
 # Load configuration
@@ -14,12 +13,6 @@ with open('config.json', 'r') as config_file:
 class Model2:
 
     def __init__(self, client, db):
-        # Connect to MongoDB from environment variable - Note: Change connection string as needed
-        client = MongoClient(os.getenv('MONGO_PORT'))
-        # Connect to the database (creates it lazily if it doesn't exist) - will 
-        # be actually created when the first document is insereted into a collection
-        db_name = config['database']['name']
-        db = client[db_name]  # Use the database name from the config file
         self.client = client
         self.db = db
 
@@ -75,7 +68,6 @@ class Model2:
         print(f"Generated {n_companies} companies with {len(company_ids)} unique IDs.")
 
         # Now generate people and assign each to a company
-        companies_to_employees = {company_id: [] for company_id in company_ids}
         for x in range(n_people):  # Generate n_people documents
             
             # Generate random data with consistency
@@ -112,7 +104,6 @@ class Model2:
             p["company"] = company
             
             collection_objects['Person'].insert_one(p)  # Insert the generated data into the collection
-            companies_to_employees[assigned_company_id].append(person_id)  # Track this person for the company's employee list
         
         print(f"Generated {n_people} people.")
         print(f"Total: {n_people} documents.")
@@ -227,6 +218,6 @@ class Model2:
         # Display the number of documents updated
         print("\n", "--" * 30)
         print(f"\nQuery 4 executed in {query_time} seconds.")
-        print(f"Matched {results.matched_count} companies and updated {results.modified_count} companies to have the name 'Company'.")
+        print(f"Matched {results.matched_count} documents and updated company names of {results.modified_count} documents to have the name 'Company'.")
 
         return query_time

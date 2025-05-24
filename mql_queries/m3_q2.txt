@@ -1,0 +1,8 @@
+db.Company.aggregate([
+            {
+                "$project": {  // Choose only certain attributes
+                    "companyName": "$name",
+                    "numEmployees": {"$size": "$employees"}
+                }
+            }
+        ])

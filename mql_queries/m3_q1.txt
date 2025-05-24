@@ -1,0 +1,10 @@
+db.Company.aggregate([{
+                "$unwind": "$employees"  // Deconstruct employees document to create one doc per field
+            },
+            {
+                "$project": {  // Choose only certain attributes
+                    "fullName": "$employees.fullName",
+                    "companyName": "$name" 
+                }
+            }
+        ])
