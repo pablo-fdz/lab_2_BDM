@@ -2,7 +2,6 @@
 import datetime
 import time
 import json
-from pymongo import MongoClient
 from faker import Faker
 import re
 
