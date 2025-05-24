@@ -1,0 +1,9 @@
+db.Person.aggregate([
+    {
+        "$group": {
+            "_id": "$company._id",  // Group all Person documents by their company's ID, creating one result per unique company
+            "companyName": { "$first": "$company.name" },  // For each company group, take the company name from the first document in that group
+            "numEmployees": { "$sum": 1 }  // Counts one for each document in each group, giving us the total number of employees per company
+        }
+    }
+])

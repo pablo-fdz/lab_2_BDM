@@ -1,0 +1,8 @@
+db.Person.aggregate([
+            {
+                "$project": {  // Choose only certain attributes
+                    "fullName": "$fullName",
+                    "companyName": "$company.name"  // Get only the company name
+                }
+            }
+        ])

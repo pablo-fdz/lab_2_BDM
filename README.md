@@ -1,1 +1,1 @@
-# lab_2_BDM
+This lab tests the performance of three different models of document databases with four queries. 

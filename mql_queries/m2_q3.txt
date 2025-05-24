@@ -1,0 +1,7 @@
+db.Person.updateMany(
+  {
+    $expr:  // Allows us to use aggregation expressions (like $year) in the query
+			{ $lt: [ { $year: "$dateOfBirth" }, 1998 ] }  // Compute year of birth and compare it
+  },
+  { $set: { age: 30 } }
+)

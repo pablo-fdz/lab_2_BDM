@@ -1,0 +1,4 @@
+db.Person.updateMany(
+    {}, // Empty filter
+    {$set: {company.name: "Company"}}
+)

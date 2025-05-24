@@ -4,7 +4,6 @@ import time
 import json
 from pymongo import MongoClient
 from faker import Faker
-from dotenv import load_dotenv
 import os
 import re
 
@@ -15,10 +14,6 @@ with open('config.json', 'r') as config_file:
 class Model1:
 
     def __init__(self, client, db):
-        # Connect to MongoDB from environment variable - Note: Change connection string as needed
-        client = MongoClient(os.getenv('MONGO_PORT'))
-        # Connect to the database (creates it lazily if it doesn't exist) - will 
-        # be actually created when the first document is insereted into a collection
         db_name = config['database']['name']
         db = client[db_name]  # Use the database name from the config file
         self.client = client
@@ -72,7 +67,6 @@ class Model1:
             company_ids.append(company_id)  # Store company ID for later use
             
             collection_objects['Company'].insert_one(c)  # Insert the generated data into the collection
-            # print(str(x+1) + ". Company document inserted")
         
         print(f"Generated {n_companies} companies with {len(company_ids)} unique IDs.")
 
@@ -111,7 +105,6 @@ class Model1:
             
             collection_objects['Person'].insert_one(p)  # Insert the generated data into the collection
             companies_to_employees[assigned_company_id].append(person_id)  # Track this person for the company's employee list
-            # print(str(x+1) + ". Person document inserted")
         
         print(f"Generated {n_people} people.")
         print(f"Total: {n} documents.")
@@ -122,7 +115,6 @@ class Model1:
                 {"_id": company_id},  # Filter document (company ID)
                 {"$set": {"employeeIds": employee_ids}}  # Update the employeeIds field with the list of employee IDs
             )
-            # print(f"Updated company {company_id} with {len(employee_ids)} employee references")
 
         print("Updated all companies with employee references.")
 
