@@ -141,7 +141,7 @@ class Model1:
                 }
             },
             {
-                "$unwind": "$company"  # Remove the array 
+                "$unwind": "$company"  # Convert the array of companies into a single object 
             },
             {
                 "$project": {  # Choose only certain attributes
