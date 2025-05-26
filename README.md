@@ -221,14 +221,6 @@ All models execute the same four queries to enable performance comparison:
 3. **Query 3:** For each person born before 1988, update their age to 30
 4. **Query 4:** For each company, update its name to "Company"
 
-### Expected Performance Characteristics
-
-| Model | Query 1 | Query 2 | Query 3 | Query 4 | Storage | Write Performance |
-|-------|---------|---------|---------|---------|---------|-------------------|
-| Model 1 | Slower (joins) | Fast | Fast | Fast | Efficient | Fast |
-| Model 2 | Fast | Slower (grouping) | Fast | Slower (multiple docs) | High duplication | Slow for company updates |
-| Model 3 | Fast | Fast | Slower (array updates) | Fast | High duplication | Slow for person updates |
-
 ### Tested Performance Characteristics
 
 With 100,000 documents created for each model and a ratio of 50:1 for person:company documents:
